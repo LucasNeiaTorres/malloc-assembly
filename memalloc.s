@@ -1,9 +1,11 @@
-# as malloc.s -o malloc.o -g; ld malloc.o -o malloc -g
-
 .section .data
 
 .section .text
 .global _start
+.global setup_brk
+.global dismiss_brk
+.global memory_alloc
+.global memory_free
 
 # obtem o endereco de brk
 setup_brk:
@@ -38,14 +40,3 @@ memory_free:
     
     popq %rbp
     ret
-
-_start:
-    pushq %rbp
-    movq %rsp, %rbp
-
-
-    addq $16, %rsp # depende das variaveis locais
-    popq %rbp
-    movq $0, %rdi
-    movq $60, %rax
-    syscall
