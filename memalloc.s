@@ -1,4 +1,8 @@
 .section .data
+    current_brk: .quad 0
+.global original_brk
+    original_brk:   # A variável que armazena o valor original de brk
+   .quad 0      # Inicialmente, pode ser 0 ou o valor atual de brk
 
 .section .text
 .global _start
@@ -12,6 +16,13 @@ setup_brk:
     pushq %rbp
     movq %rsp, %rbp
 
+    movq $12, %rax              # código da syscall para o brk
+    movq $0, %rdi      # brk restaura valor inicial da heap
+    syscall
+
+    movq %rax, original_brk
+    movq %rax, current_brk
+
     popq %rbp
     ret
 
@@ -20,6 +31,10 @@ dismiss_brk:
     pushq %rbp
     movq %rsp, %rbp
     
+    movq $12, %rax              # código da syscall para o brk
+    movq original_brk, %rdi      # brk restaura valor inicial da heap
+    syscall
+
     popq %rbp
     ret
 

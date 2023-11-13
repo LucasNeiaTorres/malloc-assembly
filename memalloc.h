@@ -1,6 +1,8 @@
 #ifndef _MEMALLOC_H
 #define _MEMALLOC_H
 
+extern void *original_brk;
+
 void setup_brk();
 
 void dismiss_brk(); 

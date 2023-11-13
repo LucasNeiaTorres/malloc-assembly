@@ -9,7 +9,7 @@ extern void *memory_alloc(unsigned long int bytes);
 extern int memory_free(void *pointer);
 
 
-// extern void *original_brk;			//Você precisa ter a variável global que armazena o valor de brk como um extern aqui.
+extern void *original_brk;			//Você precisa ter a variável global que armazena o valor de brk como um extern aqui.
 									//No código de teste estou chamandando de original_brk, mas se utilizarem outro nome,
 									//substituir as ocorrências por ele aqui.
 
