@@ -44,7 +44,41 @@ dismiss_brk:
 memory_alloc:
     pushq %rbp
     movq %rsp, %rbp
+    movq original_brk, %rbx
+    movq current_brk, %rcx
     
+    _inicio_for:
+        cmpq %rbx, %rcx          # %rcx (i) >= %rbx (topo) ==> fim_while
+        jge _fim_for
+            movq (%rcx), %rdx       # %rdx (bit_ocupado) <-- M[%rcx]
+            movq 8(%rcx), %rsi      # %rsi (tamanho) <-- M[%rcx + 8]
+
+            # verifica se o bloco está livre
+            cmpq $0, %rdx           # %rdx (bit_ocupado) != 0 ==> fim_if
+            jne _fim_if
+                # verifica se o tamanho do bloco é suficiente
+                cmpq 16(%rbp), %rsi     # %rsi (tamanho) < num_bytes ==> fim_if
+                jl _fim_if
+                    # marca o bloco como ocupado
+                    @ movq $1, %rdx           # %rdx (bit_ocupado) <-- 1
+                    @ movq %rdx, (%rcx)       # M[%rcx] <-- %rdx (bit_ocupado)
+                    @ movq %rcx, %rax         # %rax <-- %rcx (endereço do bloco)
+                    @ addq $16, %rax          # %rax <-- %rax + 16 (endereço do bloco + 16)
+                    @ movq %rax, %rcx         # %rcx <-- %rax (endereço do bloco + 16)
+                    @ movq 16(%rbp), %rax     # %rax <-- num_bytes
+                    @ subq $16, %rax          # %rax <-- %rax - 16 (num_bytes - 16)
+                    @ movq %rax, 8(%rcx)      # M[%rcx + 8] <-- %rax (tamanho do bloco)
+                    @ movq $1, %rdx           # %rdx (bit_ocupado) <-- 1
+                    @ movq %rdx, (%rcx)       # M[%rcx] <-- %rdx (bit_ocupado)
+                    @ movq %rcx, %rax         # %rax <-- %rcx (endereço do bloco)
+                    @ addq $16, %rax          # %rax <-- %rax + 16 (endereço do bloco + 16)
+                    @ movq %rax, current_brk  # current_brk <-- %rax (endereço do bloco + 16)
+                    jmp _fim_for
+
+            _fim_if:
+        _fim_for:
+
+
     popq %rbp
     ret
 
