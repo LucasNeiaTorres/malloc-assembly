@@ -28,8 +28,7 @@ int main()
 
 	f_pnt = memory_alloc(100);
 
-	void *ant = f_pnt - 16;
-	*(int *)ant = 1;
+
 	printf("-->%lld\n", *((long long *)(f_pnt - 8)));
 	printf("-->%lld\n", *((long long *)(f_pnt - 16)));
 	printf("==>> ALOCANDO UM ESPAÇO DE 100 BYTES:\n");
@@ -43,7 +42,10 @@ int main()
 	printf("\tTAMANHO: %s\n", *((long long *)(f_pnt - 8)) == 100 ? "CORRETO!" : "INCORRETO!");
 
 	s_pnt = memory_alloc(50);
+	printf("%p\n", s_pnt);
+	printf("%p\n", s_pnt+100);
 	t_pnt = memory_alloc(100);
+	printf("%p\n", t_pnt);
 	printf("==>> ALOCANDO UM ESPAÇO DE 50 BYTES:\n");
 	printf("\tLOCAL: %s\n", s_pnt - 16 == initial_brk ? "CORRETO!" : "INCORRETO!");
 	printf("\tIND. DE USO: %s\n", *((long long *)(s_pnt - 16)) == 1 ? "CORRETO!" : "INCORRETO!");

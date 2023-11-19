@@ -52,8 +52,6 @@ memory_alloc:
     movq %rdi, %rsi                 # rsi = tamanho_alocacao
     addq $2, %rsi                   # rsi = tamanho_alocacao + 2
 
-
-
     # Essas 3 funções estão formando um while
 
     busca_livre:
@@ -64,29 +62,76 @@ memory_alloc:
         je verifica_tamanho
 
         movq +8(%rax), %r13         # r13 = tamanho_bloco ==> Acessando a posição que guarda o tamanho
-        addq %r13, %rax           # vai ter q voltar a buscar
-        addq $16, %rax
+        addq $2, %r13               # r13 += 2 distancia para o proximo ponteiro
+                                    # rax = endereço do segmento
+        
+        movq %rax, %r11             # r11 = rax
+        addq $116, %rax
+
+        popq %rbx
+        ret
+        movq $8, %rax
+        mul %r13                    # rax = r13 * 8
+        addq %rax, %r11             # r11 = r11 + rax
+        movq %r11, %rax             # rax = r11
+        
+        #popq %rbp
+        #ret
+
         jmp busca_livre
 
         verifica_tamanho:
             movq +8(%rax), %r13         # r13 = tamanho_bloco ==> Acessando a posição que guarda o tamanho
-            cmpq %rsi, %r13             # r13 >= rsi ==> if( tamanho_bloco >= tamamhno_alocacao )
+            cmpq %rsi, %r13             # r13 >= rsi ==> if( tamanho_bloco >= tamanho_alocacao )
             jge mantem_brk              # marcha
             addq (%r13), %rax           # vai ter q voltar a buscar
-            addq $16, %rax
+            movq %rax, %r11             # r11 = rax
+            movq $8, %rax
+            mul %r13                     # rax = r13 * 8
+            addq %rax, %r11
+            movq %r11, %rax
             jmp busca_livre
 
 
-
+    encerra:
+        movq %rax, %rdi
+        movq $60, %rax
+        syscall
 
     mantem_brk:
+                                    # r13 = tamanho do bloco
         movq %rax, %r8              # r8 = posicao_inicial do bloco
-        movq $1, (%r8)              # primeiro endereço = 1 ( ocupado )
-        movq %r10, %r9              # r9 = tamanho_alocacao
-        movq %r9, 8(%r8)            # segundo endereco = tamanho_alocacao
-        addq $16, %r8               # r8 = posicao_inicial + 16 ==> ponteiro para o primeiro endereço de dados da alocação
-        movq %r8, %rax              # retorno pelo rax
-        jmp fim
+        movq %r10, %r9              # r9 = tamanho_alocacao que eu quero agora
+        subq %r9, %r13              # r13 = r13 - r9
+        cmpq $3, %r13               # if ( r13 >= 3 )
+        jge fragmenta
+
+
+        resolve_inicial:
+            movq $1, (%r8)              # primeiro endereço = 1 ( ocupado )
+            movq %r9, 8(%r8)            # segundo endereco = tamanho_alocacao
+            addq $16, %r8               # r8 = posicao_inicial + 16 ==> ponteiro para o primeiro endereço de dados da alocação
+            movq %r8, %rax              # retorno pelo rax
+
+            popq %rbp
+            ret
+
+
+    # se o tamanho do bloco for mt grande tem chance da multiplicao quebrar o programa
+    fragmenta:
+        # r13 ==> tem o espaço de bits que a alocao inicial n vai utilizar
+        # r8 ==> posicao inicial do bloco primário
+        # r9 ==> tamanho_alocacao que eu quero agora
+
+        movq %r8, %r14      # r14 = r8
+        movq $8, %rax
+        mul %r9            # rax = r9 * rax ==>  rax = r9*8  ==> soma que preciso fazer para chegar no endereço inicial do bloco seguinte
+        addq %rax, %r14     # r14 = r14 + rax ==> endereco do proximo bloco
+
+        movq $0, (%r14)     # primeiro endereço = 0 ( livre )
+        subq $16, %r13      # r13 -= 16     ==> como r13 tem o espaço de bits do fragmeto, o tamanho do fragmento vai ser o espaço - "header"
+        movq %r13, 8(%r14)
+        jmp resolve_inicial
 
 
     altera_brk:
@@ -108,15 +153,21 @@ memory_alloc:
         movq %r8, %rax              # retorno pelo rax
 
 
-    fim:
         popq %rbp
         ret
+
+
 
 # marca um bloco ocupado como livre
 memory_free:
     pushq %rbp
     movq %rsp, %rbp
     
+    movq original_brk, %rdx
+    movq %rdi, %r10
+    subq $16, %r10
+    movq $0, (%r10)
+
     popq %rbp
     ret
     
