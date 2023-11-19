@@ -49,112 +49,78 @@ memory_alloc:
     movq %rdi, %r10                 #Pegando o tamanho de alocação pelo rdi e quardando no r10
 
     movq original_brk, %rax         # rax = endereço_heap
-    movq %rdi, %rsi                 # rsi = tamanho_alocacao
-    addq $2, %rsi                   # rsi = tamanho_alocacao + 2
+    movq %rdi, %r8                 # r8 = tamanho_alocacao
 
-    # Essas 3 funções estão formando um while
+
 
     busca_livre:
         cmpq %rax, current_brk      # current_brk > %rax ==> Verificação de ponteiros, se a posicao do qual deseja ver o valor passar de current_brk da segfault
-        jle altera_brk              # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
+        jle insere_final_heap              # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
         
         cmpq $0, (%rax)             # if(endereco==0) ==> bloco_livre
-        je verifica_tamanho
+        je bloco_livre
 
-        movq +8(%rax), %r13         # r13 = tamanho_bloco ==> Acessando a posição que guarda o tamanho
-        addq $2, %r13               # r13 += 2 distancia para o proximo ponteiro
-                                    # rax = endereço do segmento
-        
-        movq %rax, %r11             # r11 = rax
-        addq $116, %rax
+        jmp bloco_ocupado
+    
 
-        popq %rbx
-        ret
-        movq $8, %rax
-        mul %r13                    # rax = r13 * 8
-        addq %rax, %r11             # r11 = r11 + rax
-        movq %r11, %rax             # rax = r11
-        
-        #popq %rbp
-        #ret
+    bloco_livre:
+        movq 8(%rax), %r11          # r11 = tamanho do bloco
+        movq %r11, %r12             # r12 = r11
+        subq %r8, %r12              # tamanho_bloco - tamanho_para_alocar 
+        movq %rax, %rbx
+        cmpq $0, %r12               # if( r12 < 0 )
+        jl bloco_ocupado
 
+        cmpq $3, %r12               # if( r12 < 3 )
+        jl formata_header
+
+
+
+        subq $16, %r12              # tamanho_bloco - tamanho_para_alocar - header
+        addq %r8, %rbx
+        addq $16, %rbx
+        movq $0, (%rbx)
+        movq %r12, +8(%rbx)
+        movq %rax, %rbx
+        jmp formata_header
+
+    bloco_ocupado:
+        movq 8(%rax), %r11          # r11 = tamanho do bloco
+        movq %rax, %rbx
+        addq %r11, %rbx
+        movq %rbx, %rax
+        addq $16, %rax
         jmp busca_livre
 
-        verifica_tamanho:
-            movq +8(%rax), %r13         # r13 = tamanho_bloco ==> Acessando a posição que guarda o tamanho
-            cmpq %rsi, %r13             # r13 >= rsi ==> if( tamanho_bloco >= tamanho_alocacao )
-            jge mantem_brk              # marcha
-            addq (%r13), %rax           # vai ter q voltar a buscar
-            movq %rax, %r11             # r11 = rax
-            movq $8, %rax
-            mul %r13                     # rax = r13 * 8
-            addq %rax, %r11
-            movq %r11, %rax
-            jmp busca_livre
 
 
-    encerra:
-        movq %rax, %rdi
-        movq $60, %rax
+
+    arruma_ponteiro_heap:
+        movq current_brk, %rdi      # rdi = final_heap
+        addq %r8, %rdi             # rdi = final_heap + tamanho_segmento
+        addq $16, %rdi              # rdi = final_heap + tamanho_segmento + header
+        movq $12, %rax              # chamada syscall
         syscall
+        movq current_brk, %rbx      # rdx servindo de backup do ponteiro currente_brk antes de ser alterado
+        movq %rdi, current_brk  
+        jmp formata_header    
 
-    mantem_brk:
-                                    # r13 = tamanho do bloco
-        movq %rax, %r8              # r8 = posicao_inicial do bloco
-        movq %r10, %r9              # r9 = tamanho_alocacao que eu quero agora
-        subq %r9, %r13              # r13 = r13 - r9
-        cmpq $3, %r13               # if ( r13 >= 3 )
-        jge fragmenta
-
-
-        resolve_inicial:
-            movq $1, (%r8)              # primeiro endereço = 1 ( ocupado )
-            movq %r9, 8(%r8)            # segundo endereco = tamanho_alocacao
-            addq $16, %r8               # r8 = posicao_inicial + 16 ==> ponteiro para o primeiro endereço de dados da alocação
-            movq %r8, %rax              # retorno pelo rax
-
-            popq %rbp
-            ret
+    insere_final_heap:
+        jmp arruma_ponteiro_heap
+        formata_header:
+            movq $1, (%rbx)
+            movq %r8, +8(%rbx)
+            addq $16, %rbx
+            movq %rbx, %rax
+            jmp finaliza
 
 
-    # se o tamanho do bloco for mt grande tem chance da multiplicao quebrar o programa
-    fragmenta:
-        # r13 ==> tem o espaço de bits que a alocao inicial n vai utilizar
-        # r8 ==> posicao inicial do bloco primário
-        # r9 ==> tamanho_alocacao que eu quero agora
-
-        movq %r8, %r14      # r14 = r8
-        movq $8, %rax
-        mul %r9            # rax = r9 * rax ==>  rax = r9*8  ==> soma que preciso fazer para chegar no endereço inicial do bloco seguinte
-        addq %rax, %r14     # r14 = r14 + rax ==> endereco do proximo bloco
-
-        movq $0, (%r14)     # primeiro endereço = 0 ( livre )
-        subq $16, %r13      # r13 -= 16     ==> como r13 tem o espaço de bits do fragmeto, o tamanho do fragmento vai ser o espaço - "header"
-        movq %r13, 8(%r14)
-        jmp resolve_inicial
-
-
-    altera_brk:
-
-        movq %rax, %r14             # r14 = rax ==> inicio_bloco         
-        movq %rax, %rbx             # rbx = rax ==> inicio_bloco
-        addq %r10, %rbx             # rbx = tamanho_alocacao
-        addq $16, %rbx              # rbx = tamanho_alocacao + 16
-        movq %rbx, %rdi             # rdi = rbx
-        movq $12, %rax              # rax = 12 ==> para chamada de syscall heap
-        syscall
-        
-        movq %rbx, current_brk      # current_brk = tamanho_alocacao + 16
-        movq %r14, %r8              # r8 = inicio_bloco
-        movq $1, (%r8)              # primeiro endereço = 1 ( ocupado )
-        movq %r10, %r9              # r9 = tamanho_alocacao
-        movq %r9, 8(%r8)            # segundo endereco = tamanho_alocacao
-        addq $16, %r8               # r8 = inicio_bloco + 16 ==> ponteiro para o primeiro endereço de dados da alocação
-        movq %r8, %rax              # retorno pelo rax
-
-
+    finaliza:
         popq %rbp
         ret
+
+
+
 
 
 

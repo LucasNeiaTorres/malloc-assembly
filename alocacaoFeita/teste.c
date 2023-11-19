@@ -41,11 +41,29 @@ int main()
 	printf("\tIND. DE USO: %s\n", *((long long *)(f_pnt - 16)) == 0 ? "CORRETO!" : "INCORRETO!");
 	printf("\tTAMANHO: %s\n", *((long long *)(f_pnt - 8)) == 100 ? "CORRETO!" : "INCORRETO!");
 
+
 	s_pnt = memory_alloc(50);
-	printf("%p\n", s_pnt);
-	printf("%p\n", s_pnt+100);
+	printf("original: %p\n", original_brk);
+	printf("s_pnt: %p\n", s_pnt);
+
+	// short int *pont = original_brk;
+	// for(int i=0;i<100;i++)
+	// {
+	// 	printf("%p - %d - %d\n", pont, *pont, i);
+	// 	pont++;
+	// }
+	// printf("original: %p\n", original_brk);
+	// printf("s_pnt: %p\n", s_pnt);
+	// printf("%lld\n", *((long long *)(s_pnt - 16)));
+	// printf("%lld\n", *((long long *)(s_pnt - 8)));
+
+	// printf("%lld\n", *((long long *)(s_pnt - 16 ))); 
+	// printf("%lld\n", *((long long *)(s_pnt - 8 )));
+
+	
 	t_pnt = memory_alloc(100);
-	printf("%p\n", t_pnt);
+	printf("original: %p\n", original_brk);
+	printf("t_pnt: %p\n", t_pnt);
 	printf("==>> ALOCANDO UM ESPAÇO DE 50 BYTES:\n");
 	printf("\tLOCAL: %s\n", s_pnt - 16 == initial_brk ? "CORRETO!" : "INCORRETO!");
 	printf("\tIND. DE USO: %s\n", *((long long *)(s_pnt - 16)) == 1 ? "CORRETO!" : "INCORRETO!");
