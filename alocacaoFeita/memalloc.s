@@ -82,7 +82,7 @@ memory_alloc:
         addq %r8, %rax              # rax = tamanho_alocacao <-- aponta para o inicio do bloco fragmentado
         addq $16, %rax              # rax = tamanho_alocacao + header
         movq $0, (%rax)             # bloco_fragmentado.ocupado = 0 ==> não esta ocupado
-        movq %r12, +8(%rax)         # bloco_fragmentado.tamanho = tamanho_bloco - tamanho_para_alocar - header
+        movq %r12, 8(%rax)         # bloco_fragmentado.tamanho = tamanho_bloco - tamanho_para_alocar - header
         jmp formata_header
 
     bloco_ocupado:
