@@ -1,16 +1,20 @@
-flags = -g -Wall -no-pie
-PROG = malloc
+CC = gcc
+AS = as
+CFLAGS = -g -no-pie
+LFLAGS = -lm
 
-all: $(PROG)
+main: main.o memalloc.o
+	$(CC) $(CFLAGS) $(LFLAGS) -o main main.o memalloc.o
 
-$(PROG): teste.o memalloc.o
-	gcc $(flags) -o $(PROG) teste.o memalloc.o
+memalloc.o: memalloc.s 
+	$(AS) $(CFLAGS) -c memalloc.s -o memalloc.o
 
-teste.o: teste.c
-	gcc $(flags) -c teste.c -o teste.o
-
-memalloc.o: memalloc.h memalloc.s
-	as $(flags) memalloc.s -o memalloc.o
+main.o: main.c memalloc.h
+	$(CC) $(CFLAGS) -c main.c -o main.o
 
 clean:
-	rm -rf *.o $(PROG)
+	rm -rf ./*.o
+
+purge:
+	clean
+	rm -rf main

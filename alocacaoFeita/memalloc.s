@@ -46,7 +46,7 @@ memory_alloc:
     pushq %rbp
     movq %rsp, %rbp
 
-    movq %rdi, %r10                 #Pegando o tamanho de alocação pelo rdi e quardando no r10
+    movq 16(%rbp), %r10             #Pegando o tamanho de alocação pelo rdi e quardando no r10
 
     movq original_brk, %rax         # rax = endereço_heap
     movq %rdi, %r8                  # r8 = tamanho_alocacao
@@ -103,7 +103,7 @@ memory_alloc:
 
     formata_header:                 
         movq $1, (%rbx)             # Bloco ocupado
-        movq %r8, +8(%rbx)          # Tamanho do bloco em segmento.tamanho
+        movq %r8, 8(%rbx)          # Tamanho do bloco em segmento.tamanho
         addq $16, %rbx              # Endereço do inicio da araa alocada = ponteiro de ocupado + 16
         movq %rbx, %rax             # Endereço de retorno
         jmp finaliza
