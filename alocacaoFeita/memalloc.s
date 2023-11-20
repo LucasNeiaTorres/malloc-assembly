@@ -14,9 +14,6 @@
 
 # obtem o endereco de brk
 setup_brk:
-    pushq %rbp
-    movq %rsp, %rbp
-
     movq $12, %rax              # código da syscall para o brk
     movq $0, %rdi      # brk restaura valor inicial da heap
     syscall
@@ -24,19 +21,14 @@ setup_brk:
     movq %rax, original_brk
     movq %rax, current_brk
 
-    popq %rbp
     ret
 
 # restaura o endereco de brk
 dismiss_brk:
-    pushq %rbp
-    movq %rsp, %rbp
-    
     movq $12, %rax              # código da syscall para o brk
     movq original_brk, %rdi      # brk restaura valor inicial da heap
     syscall
 
-    popq %rbp
     ret
 
 # 1. Procura bloco livre com tamanho igual ou maior que a requisição
@@ -46,7 +38,7 @@ memory_alloc:
     pushq %rbp
     movq %rsp, %rbp
 
-    movq 16(%rbp), %r10             #Pegando o tamanho de alocação pelo rdi e quardando no r10
+    movq 16(%rbp), %r10             # Pegando o tamanho de alocação pelo rdi e quardando no r10
 
     movq original_brk, %rax         # rax = endereço_heap
     movq %rdi, %r8                  # r8 = tamanho_alocacao
