@@ -61,6 +61,7 @@ memory_alloc:
         jle verifica_worst_fit      # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
        
         retorno_worst_fit:
+        
         cmpq $0, (%rax)             # if(endereco==0) ==> bloco_livre
         je bloco_livre
 
@@ -81,7 +82,6 @@ memory_alloc:
         cmpq %r13, %r8               # if ( r8 > r13 )
         jg muda_endereco_inicial           
 
-        formata_fragmento:
         cmpq $24, %r12              # if( r12 < 24 )
         jl formata_bloco_completo
 
@@ -103,7 +103,7 @@ memory_alloc:
     muda_endereco_inicial:
         movq %r8, %r13
         movq %rax, %rdx
-        jmp busca_livre
+        jmp bloco_ocupado
 
 
     aux:
@@ -113,11 +113,12 @@ memory_alloc:
 
 
     verifica_worst_fit:
-        cmpq %rdx, current_brk      # if(current_brk <= rdx)
-        jle arruma_ponteiro_heap
+        cmpq %rdx, current_brk
+        je arruma_ponteiro_heap
+        cmpq %rdx, original_brk
+        je arruma_ponteiro_heap
+        movq %rdx, %rax
         jmp retorno_worst_fit
-
-        
 
 
     arruma_ponteiro_heap:
