@@ -14,6 +14,9 @@
 
 # obtem o endereco de brk
 setup_brk:
+    pushq %rbp
+    movq %rsp, %rbp
+
     movq $12, %rax              # código da syscall para o brk
     movq $0, %rdi      # brk restaura valor inicial da heap
     syscall
@@ -21,14 +24,19 @@ setup_brk:
     movq %rax, original_brk
     movq %rax, current_brk
 
+    popq %rbp
     ret
 
 # restaura o endereco de brk
 dismiss_brk:
+    pushq %rbp
+    movq %rsp, %rbp
+   
     movq $12, %rax              # código da syscall para o brk
     movq original_brk, %rdi      # brk restaura valor inicial da heap
     syscall
 
+    popq %rbp
     ret
 
 # 1. Procura bloco livre com tamanho igual ou maior que a requisição
@@ -38,7 +46,7 @@ memory_alloc:
     pushq %rbp
     movq %rsp, %rbp
 
-    movq 16(%rbp), %r10             # Pegando o tamanho de alocação pelo rdi e quardando no r10
+    movq %rdi, %r10
 
     movq original_brk, %rax         # rax = endereço_heap
     movq %rdi, %r8                  # r8 = tamanho_alocacao
@@ -49,12 +57,12 @@ memory_alloc:
     busca_livre:
         cmpq %rax, current_brk      # current_brk > %rax ==> Verificação de ponteiros, se a posicao do qual deseja ver o valor passar de current_brk da segfault
         jle arruma_ponteiro_heap       # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
-        
+       
         cmpq $0, (%rax)             # if(endereco==0) ==> bloco_livre
         je bloco_livre
 
         jmp bloco_ocupado           # caso contrário o bloco esta ocupado
-    
+   
 
     # Quando bloco livre primeiro procura o tamanho dele para ver se o bloco a ser inserido cabe
     # Depois é necessário verificar se fragmenta ou não: Caso tenha 3 bytes livre nao framgenta, apenas arruma os ponteiros iniciais
@@ -62,20 +70,28 @@ memory_alloc:
     bloco_livre:
         movq 8(%rax), %r11          # r11 = tamanho do bloco
         movq %r11, %r12             # r12 = r11
-        subq %r8, %r12              # tamanho_bloco - tamanho_para_alocar 
+
+        subq %r8, %r12              # tamanho_bloco - tamanho_para_alocar
         movq %rax, %rbx
         cmpq $0, %r12               # if( r12 < 0 )
         jl bloco_ocupado
 
-        cmpq $3, %r12               # if( r12 < 3 )
-        jl formata_header
+        cmpq $24, %r12              # if( r12 < 24 )
+        jl formata_bloco_completo
 
+       
         subq $16, %r12              # tamanho_bloco - tamanho_para_alocar - header
         addq %r8, %rax              # rax = tamanho_alocacao <-- aponta para o inicio do bloco fragmentado
         addq $16, %rax              # rax = tamanho_alocacao + header
         movq $0, (%rax)             # bloco_fragmentado.ocupado = 0 ==> não esta ocupado
-        movq %r12, 8(%rax)         # bloco_fragmentado.tamanho = tamanho_bloco - tamanho_para_alocar - header
-        jmp formata_header
+        movq %r12, 8(%rax)          # bloco_fragmentado.tamanho = tamanho_bloco - tamanho_para_alocar - header
+        jmp formata_bloco_fragmentado
+
+
+    aux:
+        movq %r11, %rdi
+        movq $60, %rax
+        syscall
 
     bloco_ocupado:
         movq 8(%rax), %r11          # r11 = tamanho do bloco
@@ -91,12 +107,19 @@ memory_alloc:
         syscall
         movq current_brk, %rbx      # rdx servindo de backup do ponteiro currente_brk antes de ser alterado
         movq %rdi, current_brk      # atualiza current_brk
-        jmp formata_header    
+        jmp formata_bloco_fragmentado
 
-    formata_header:                 
+    formata_bloco_completo:
+        movq %r11, 8(%rbx)           # Tamanho do bloco em segmento.tamanho
+        jmp formata_header
+
+    formata_bloco_fragmentado:
+        movq %r8, 8(%rbx)           # Tamanho do bloco em segmento.tamanho
+        jmp formata_header
+
+    formata_header:                
         movq $1, (%rbx)             # Bloco ocupado
-        movq %r8, 8(%rbx)          # Tamanho do bloco em segmento.tamanho
-        addq $16, %rbx              # Endereço do inicio da araa alocada = ponteiro de ocupado + 16
+        addq $16, %rbx              # Endereço do inicio da area alocada = ponteiro de ocupado + 16
         movq %rbx, %rax             # Endereço de retorno
         jmp finaliza
 
@@ -111,7 +134,7 @@ memory_alloc:
 memory_free:
     pushq %rbp
     movq %rsp, %rbp
-    
+   
     movq %rdi, %r10
     cmpq current_brk, %r10          
     jg invalido                     # if ( r10 > current_brk )
@@ -125,4 +148,3 @@ memory_free:
     movq $0, %rax                   # Operação mal sucedida
     popq %rbp
     ret
-    

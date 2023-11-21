@@ -1,92 +1,92 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
-#include "memalloc.h"
+#include "memalloc.h" 							
 
-extern void *original_brk; /* Você precisa ter a variável global que armazena o valor de brk como um extern aqui.
-						   No código de teste estou chamandando de original_brk, mas se utilizarem outro nome,
-						   substituir as ocorrências por ele aqui. */
+extern void *original_brk;	/* Você precisa ter a variável global que armazena o valor de brk como um extern aqui.
+							No código de teste estou chamandando de original_brk, mas se utilizarem outro nome,
+							substituir as ocorrências por ele aqui. */
 
-int main()
-{
+int main() { 
 
 	printf("============================== ROTINAS DE TESTE ==============================\n");
-
+	
 	setup_brk();
-
 	void *initial_brk = original_brk;
-	void *f_pnt, *s_pnt, *t_pnt;
+	void *pnt_1, *pnt_2, *pnt_3, *pnt_4, *pnt_5, *pnt_6, *pnt_7;
 
-	// void *pnt = memory_alloc(100);
-	// void *pnt2 = memory_alloc(50);
-	// printf("%p\n", pnt);
-	// printf("%p\n", pnt2);
-	// return;
-
-	// printf("%ld\n", *(long int*)(pnt));
-
-	f_pnt = memory_alloc(100);
-
-
+	pnt_1 = memory_alloc(100);
 	printf("==>> ALOCANDO UM ESPAÇO DE 100 BYTES:\n");
-	printf("\tLOCAL: %s\n", f_pnt - 16 == initial_brk ? "CORRETO!" : "INCORRETO!");
-	printf("\tIND. DE USO: %s\n", *((long long *)(f_pnt - 16)) == 1 ? "CORRETO!" : "INCORRETO!");
-	printf("\tTAMANHO: %s\n", *((long long *)(f_pnt - 8)) == 100 ? "CORRETO!" : "INCORRETO!");
+	printf("\tLOCAL: %s\n", pnt_1-16 == initial_brk ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_1-16)) == 1 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_1-8)) == 100 ? "CORRETO!" : "INCORRETO!");
 
-	printf("==>> DESALOCANDO UM ESPAÇO DE 100 BYTES:\n");
-	memory_free(f_pnt);
-	printf("\tIND. DE USO: %s\n", *((long long *)(f_pnt - 16)) == 0 ? "CORRETO!" : "INCORRETO!");
-	printf("\tTAMANHO: %s\n", *((long long *)(f_pnt - 8)) == 100 ? "CORRETO!" : "INCORRETO!");
+	pnt_2 = memory_alloc(130);
+	printf("==>> ALOCANDO UM ESPAÇO DE 130 BYTES:\n");
+	printf("\tLOCAL: %s\n", pnt_2-16 == initial_brk + 116 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_2-16)) == 1 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_2-8)) == 130 ? "CORRETO!" : "INCORRETO!");
+	printf("\tREL. PRIMEIRA ALOCAÇÃO: %s\n", (long long) (pnt_2-pnt_1) == 116 ? "CORRETO!" : "INCORRETO!");
 
+	pnt_3 = memory_alloc(110);
+	printf("==>> ALOCANDO UM ESPAÇO DE 110 BYTES:\n");
+	printf("\tLOCAL: %s\n", pnt_3-16 == initial_brk + 262 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_3-16)) == 1 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_3-8)) == 110 ? "CORRETO!" : "INCORRETO!");
+	printf("\tREL. SEGUNDA ALOCAÇÃO: %s\n", (long long) (pnt_3-pnt_2) == 146 ? "CORRETO!" : "INCORRETO!");
 
-	s_pnt = memory_alloc(50);
-	// printf("original: %p\n", original_brk);
-	// printf("s_pnt: %p\n", s_pnt);
+	pnt_4 = memory_alloc(120);
+	printf("==>> ALOCANDO UM ESPAÇO DE 120 BYTES:\n");
+	printf("\tLOCAL: %s\n", pnt_4-16 == initial_brk + 388 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_4-16)) == 1 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_4-8)) == 120 ? "CORRETO!" : "INCORRETO!");
+	printf("\tREL. TERCEIRA ALOCAÇÃO: %s\n", (long long) (pnt_4-pnt_3) == 126 ? "CORRETO!" : "INCORRETO!");
 
-	// short int *pont = original_brk;
-	// for(int i=0;i<100;i++)
-	// {
-	// 	printf("%p - %d - %d\n", pont, *pont, i);
-	// 	pont++;
-	// }
-	// printf("original: %p\n", original_brk);
-	// printf("s_pnt: %p\n", s_pnt);
-	// printf("%lld\n", *((long long *)(s_pnt - 16)));
-	// printf("%lld\n", *((long long *)(s_pnt - 8)));
+	printf("==>> DESALOCANDO UM ESPAÇO DE 130 BYTES:\n");
+	memory_free(pnt_2);
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_2-16)) == 0 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_2-8)) == 130 ? "CORRETO!" : "INCORRETO!");
 
-	// printf("%lld\n", *((long long *)(s_pnt - 16 ))); 
-	// printf("%lld\n", *((long long *)(s_pnt - 8 )));
+	printf("==>> DESALOCANDO UM ESPAÇO DE 120 BYTES:\n");
+	memory_free(pnt_4);
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_4-16)) == 0 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_4-8)) == 120 ? "CORRETO!" : "INCORRETO!");
 
-
-	t_pnt = memory_alloc(100);
-	// printf("original: %p\n", original_brk);
-	// printf("t_pnt: %p\n", t_pnt);
+	pnt_5 = memory_alloc(50);
 	printf("==>> ALOCANDO UM ESPAÇO DE 50 BYTES:\n");
-	printf("\tLOCAL: %s\n", s_pnt - 16 == initial_brk ? "CORRETO!" : "INCORRETO!");
-	printf("\tIND. DE USO: %s\n", *((long long *)(s_pnt - 16)) == 1 ? "CORRETO!" : "INCORRETO!");
-	printf("\tTAMANHO: %s\n", *((long long *)(s_pnt - 8)) == 50 ? "CORRETO!" : "INCORRETO!");
-	printf("==>> ALOCANDO UM ESPAÇO DE 100 BYTES:\n");
-	printf("\tLOCAL: %s\n", s_pnt + 100 == t_pnt - 16 ? "CORRETO!" : "INCORRETO!");
-	printf("\tIND. DE USO: %s\n", *((long long *)(t_pnt - 16)) == 1 ? "CORRETO!" : "INCORRETO!");
-	printf("\tTAMANHO: %s\n", *((long long *)(t_pnt - 8)) == 100 ? "CORRETO!" : "INCORRETO!");
-	printf("==> VERIFICANDO A FRAGMENTAÇÃO DE MEMÓRIA:\n");
-	printf("\tIND. DE USO: %s\n", *((long long *)(s_pnt + 50)) == 0 ? "CORRETO!" : "INCORRETO!");
-	printf("\tTAMANHO: %s\n", *((long long *)(s_pnt + 58)) == 34 ? "CORRETO!" : "INCORRETO!");
+	printf("\tLOCAL: %s\n", pnt_5 == pnt_2 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_5-16)) == 1 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_5-8)) == 50 ? "CORRETO!" : "INCORRETO!");
+	
+	pnt_6 = memory_alloc(60);
+	printf("==>> ALOCANDO UM ESPAÇO DE 60 BYTES:\n");
+	printf("\tLOCAL: %s\n", pnt_6 == pnt_5+66 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_6-16)) == 1 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_6-8)) == 64 ? "CORRETO!" : "INCORRETO!");
+
+	pnt_7 = memory_alloc(150);
+	printf("==>> ALOCANDO UM ESPAÇO DE 150 BYTES:\n");
+	printf("\tLOCAL: %s\n", pnt_7 == pnt_4+136 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_7-16)) == 1 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_7-8)) == 150 ? "CORRETO!" : "INCORRETO!");
 
 	printf("==>> DESALOCANDO TUDO:\n");
-	memory_free(s_pnt);
-	memory_free(t_pnt);
-	printf("\tIND. DE USO: %s\n", *((long long *)(s_pnt - 16)) == 0 ? "CORRETO!" : "INCORRETO!");
-	printf("\tTAMANHO: %s\n", *((long long *)(s_pnt - 8)) == 50 ? "CORRETO!" : "INCORRETO!");
-	printf("\tIND. DE USO: %s\n", *((long long *)(t_pnt - 16)) == 0 ? "CORRETO!" : "INCORRETO!");
-	printf("\tTAMANHO: %s\n", *((long long *)(t_pnt - 8)) == 100 ? "CORRETO!" : "INCORRETO!");
-
-	printf("==>> DESALOCANDO A PILHA (ILEGAL):\n");
-	unsigned long long stack_var = 0;
-	unsigned int alloc_return = memory_free((void *)&stack_var);
-	if (!alloc_return)
-		printf("\tO RETORNO DA LIBERAÇÃO FOI NULL!\n");
+	memory_free(pnt_1);
+	memory_free(pnt_3);
+	memory_free(pnt_5);
+	memory_free(pnt_6);
+	memory_free(pnt_7);
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_1-16)) == 0 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_1-8)) == 100 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_3-16)) == 0 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_3-8)) == 110 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_5-16)) == 0 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_5-8)) == 50 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_6-16)) == 0 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_6-8)) == 64 ? "CORRETO!" : "INCORRETO!");
+	printf("\tIND. DE USO: %s\n", *((long long*) (pnt_7-16)) == 0 ? "CORRETO!" : "INCORRETO!");
+	printf("\tTAMANHO: %s\n", *((long long*) (pnt_7-8)) == 150 ? "CORRETO!" : "INCORRETO!");
 
 	return 0;
 }
+
