@@ -46,8 +46,6 @@ memory_alloc:
     pushq %rbp
     movq %rsp, %rbp
 
-    movq %rdi, %r10
-
     movq original_brk, %rax         # rax = endereço_heap
     movq %rdi, %r8                  # r8 = tamanho_alocacao
     movq $0, %r13                   # r13 = 0 situacao para nenhum bloco encontrado
@@ -58,14 +56,30 @@ memory_alloc:
     # Segunda comparação para verificar se cada segmento esta livre
     busca_livre:
         cmpq %rax, current_brk      # current_brk > %rax ==> Verificação de ponteiros, se a posicao do qual deseja ver o valor passar de current_brk da segfault
-        jle verifica_worst_fit      # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
-       
-        retorno_worst_fit:
-        
+        jle worst_fit               # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
+
         cmpq $0, (%rax)             # if(endereco==0) ==> bloco_livre
-        je bloco_livre
+        je verifica_endereco
 
         jmp bloco_ocupado           # caso contrário o bloco esta ocupado
+       
+
+    verifica_endereco:
+        movq 8(%rax), %r10
+        cmpq %r10, %r13             # if(r13 > r10)
+        jg bloco_ocupado
+        movq %r10, %r13
+        movq %rax, %rdx
+        jmp bloco_ocupado
+
+    worst_fit:
+        cmpq %rdx, current_brk
+        je arruma_ponteiro_heap
+        cmpq %rdx, original_brk
+        je arruma_ponteiro_heap
+        movq %rdx, %rax
+        jmp bloco_livre
+   
    
 
     # Quando bloco livre primeiro procura o tamanho dele para ver se o bloco a ser inserido cabe
@@ -78,9 +92,6 @@ memory_alloc:
         movq %rax, %rbx
         cmpq $0, %r12               # if( r12 < 0 )
         jl bloco_ocupado
-
-        cmpq %r13, %r8               # if ( r8 > r13 )
-        jg muda_endereco_inicial           
 
         cmpq $24, %r12              # if( r12 < 24 )
         jl formata_bloco_completo
@@ -100,25 +111,10 @@ memory_alloc:
         jmp busca_livre
 
 
-    muda_endereco_inicial:
-        movq %r8, %r13
-        movq %rax, %rdx
-        jmp bloco_ocupado
-
-
     aux:
         movq $157, %rdi
         movq $60, %rax
         syscall
-
-
-    verifica_worst_fit:
-        cmpq %rdx, current_brk
-        je arruma_ponteiro_heap
-        cmpq %rdx, original_brk
-        je arruma_ponteiro_heap
-        movq %rdx, %rax
-        jmp retorno_worst_fit
 
 
     arruma_ponteiro_heap:
