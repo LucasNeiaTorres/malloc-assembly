@@ -103,7 +103,6 @@ memory_alloc:
     muda_endereco_inicial:
         movq %r8, %r13
         movq %rax, %rdx
-        jmp aux
         jmp busca_livre
 
 
