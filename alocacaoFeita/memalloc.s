@@ -50,14 +50,17 @@ memory_alloc:
 
     movq original_brk, %rax         # rax = endereço_heap
     movq %rdi, %r8                  # r8 = tamanho_alocacao
+    movq $0, %r13                   # r13 = 0 situacao para nenhum bloco encontrado
+    movq original_brk, %rdx         # rdx = original_brk
 
 
     # Primeira comparação verifica se o ponteiro que percorre a lista de alocações ja chegou ao ponto final_heap
     # Segunda comparação para verificar se cada segmento esta livre
     busca_livre:
         cmpq %rax, current_brk      # current_brk > %rax ==> Verificação de ponteiros, se a posicao do qual deseja ver o valor passar de current_brk da segfault
-        jle arruma_ponteiro_heap       # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
+        jle verifica_worst_fit      # if ( current_brk <= rax ) ==> ja sei que preciso atualizar ponteiro do brk
        
+        retorno_worst_fit:
         cmpq $0, (%rax)             # if(endereco==0) ==> bloco_livre
         je bloco_livre
 
@@ -70,16 +73,18 @@ memory_alloc:
     bloco_livre:
         movq 8(%rax), %r11          # r11 = tamanho do bloco
         movq %r11, %r12             # r12 = r11
-
         subq %r8, %r12              # tamanho_bloco - tamanho_para_alocar
         movq %rax, %rbx
         cmpq $0, %r12               # if( r12 < 0 )
         jl bloco_ocupado
 
+        cmpq %r13, %r8               # if ( r8 > r13 )
+        jg muda_endereco_inicial           
+
+        formata_fragmento:
         cmpq $24, %r12              # if( r12 < 24 )
         jl formata_bloco_completo
 
-       
         subq $16, %r12              # tamanho_bloco - tamanho_para_alocar - header
         addq %r8, %rax              # rax = tamanho_alocacao <-- aponta para o inicio do bloco fragmentado
         addq $16, %rax              # rax = tamanho_alocacao + header
@@ -88,16 +93,33 @@ memory_alloc:
         jmp formata_bloco_fragmentado
 
 
-    aux:
-        movq %r11, %rdi
-        movq $60, %rax
-        syscall
-
     bloco_ocupado:
         movq 8(%rax), %r11          # r11 = tamanho do bloco
         addq %r11, %rax             # adiciona o tamanho do bloco no endereço de rax
         addq $16, %rax              # rax += 16
         jmp busca_livre
+
+
+    muda_endereco_inicial:
+        movq %r8, %r13
+        movq %rax, %rdx
+        jmp aux
+        jmp busca_livre
+
+
+    aux:
+        movq $157, %rdi
+        movq $60, %rax
+        syscall
+
+
+    verifica_worst_fit:
+        cmpq %rdx, current_brk      # if(current_brk <= rdx)
+        jle arruma_ponteiro_heap
+        jmp retorno_worst_fit
+
+        
+
 
     arruma_ponteiro_heap:
         movq current_brk, %rdi      # rdi = final_heap
